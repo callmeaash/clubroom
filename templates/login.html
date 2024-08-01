@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="/static/index.css">
+{% endblock %}
+
+{% block main %}
+
+    <body>
+        <div class="container-logo">
+            <img src="/static/logo2.png" alt="clubroom logo">
+        </div>
+
+        <nav class="navbar">
+            <ul>
+                <li class="active"><a href="/login">Login</a></li>
+                <li class=""><a href="/register">Register</a></li>
+            </ul>
+        </nav>
+
+        <form action="/login" method="post">
+
+            <h1>LOGIN</h1>
+            <div class="label-input">
+                <label for="name">
+                    Username<input type="text" name="name" id="name" required autocomplete="off">
+                </label>
+            </div>
+            <div class="label-input">
+                <label for="password">
+                    Password<input type="password" name="password" id="password" required autocomplete="off">
+                </label>
+            </div>
+            <a href="/forgot-password" class="forgot-pass">Forgot Password?</a>
+
+            <button type="submit">Login</button>
+        </form>
+    </body>
+
+{% endblock %}
