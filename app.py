@@ -48,3 +48,11 @@ def index():
     return render_template("index.html")
 
 
+@app.route('/register', methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        return "<h1>SAW HER IN YOUR DREAM TODAY?<h1>"
+    else:
+        return render_template("register.html")
+
+           
