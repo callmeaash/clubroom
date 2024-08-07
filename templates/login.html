@@ -5,7 +5,6 @@
 {% endblock %}
 
 {% block main %}
-
     <body>
         <div class="container-logo">
             <img src="/static/logo2.png" alt="clubroom logo">
@@ -23,16 +22,21 @@
             <h1>LOGIN</h1>
             <div class="label-input">
                 <label for="name">
-                    Username<input type="text" name="name" id="name" required autocomplete="off">
+                    Username<input type="text" name="username" id="name" value="{{ username }}" autocomplete="off">
                 </label>
+                {% if username_error %}
+                    <p>{{ username_error }}</p>
+                {% endif %}
             </div>
             <div class="label-input">
                 <label for="password">
-                    Password<input type="password" name="password" id="password" required autocomplete="off">
+                    Password<input type="password" name="password" id="password" autocomplete="off">
                 </label>
+                {% if password_error %}
+                    <p>{{ password_error }}</p>
+                {% endif %}
             </div>
             <a href="/forgot-password" class="forgot-pass">Forgot Password?</a>
-
             <button type="submit">Login</button>
         </form>
     </body>

@@ -94,8 +94,8 @@ input:focus{
     border: #2c5a9b;
 }
 
-label[for='password']{
-    margin-bottom: 10px;
+label{
+    margin-bottom: 30px;
 }
 
 .forgot-pass{
@@ -114,7 +114,10 @@ button{
     border: none;
     border-radius: 20px;
 }
-
+form p{
+    margin-top: -20px;
+    color: rgb(231, 100, 100);
+}
 @media screen and (max-width: 768px){
     .navbar{
         display: flex;

@@ -23,19 +23,28 @@
             <h1>REGISTER</h1>
             <div class="label-input">
                 <label for="name">
-                    Username<input type="text" name="name" id="name" required autocomplete="off">
+                    Username<input type="text" name="username" id="name" value = "{{ username }}"autocomplete="off">
                 </label>
+                {% if username_error %}
+                    <p>{{ username_error }}</p>
+                {% endif %}
             </div>
             <div class="label-input">
                 <label for="password">
-                    Password<input type="password" name="password" id="password" required autocomplete="off">
+                    Password<input type="password" name="password" id="password" autocomplete="off">
                 </label>
+                {% if password_error %}
+                    <p>{{ password_error }}</p>
+                {% endif %}
             </div>
 
             <div class="label-input">
                 <label for="password">
-                    Password<input type="password" name="confirm-password" id="password" required autocomplete="off">
+                    Password<input type="password" name="confirm-password" id="password" autocomplete="off">
                 </label>
+                {% if confirm_pass_error %}
+                    <p>{{ confirm_pass_error }}</p>
+                {% endif %}
             </div>
             
             <button type="submit">Register</button>
