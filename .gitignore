@@ -1,4 +1,4 @@
+*.db
 .venv/
 flask_session/
 __pycache__
-*.db
