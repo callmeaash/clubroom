@@ -1,9 +1,11 @@
-from flask import Flask, redirect, session, render_template, flash, request, url_for, flash
+from flask import Flask, redirect, session, render_template, flash, request, url_for
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from cs50 import SQL
 from functools import wraps
 import re
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import IntegrityError
 
 # Configure application
 app = Flask(__name__)
@@ -14,7 +16,13 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Configure database connection
-db = SQL("sqlite:///clubroom.db")
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///clubroom.db'
+db = SQLAlchemy(app)
+
+class Users(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    hash = db.Column(db.String(120), nullable=False)
 
 # Function for login require decorator
 def login_required(f):
@@ -50,16 +58,17 @@ def login():
         elif not password:
             return render_template("login.html", password_error="Enter Password", username_error=None, username=username)
         
-        rows = db.execute("SELECT * FROM users where username = ?", username)
-        if len(rows) != 1:
-            return render_template("login.html", username_error="Username not found")
+        user = Users.query.filter_by(username = username).first()
+
+        if user is None:
+           return render_template("login.html", username_error="Username not found")
         
-        elif not check_password_hash(rows[0]["hash"], request.form.get("password")):
-            return render_template("login.html", password_error="Wrong Password")
+        elif not check_password_hash(user.hash, password):
+           return render_template("login.html", password_error="Wrong Password")
         
         else:
-            session["user_id"] = rows[0]["id"]
-            return redirect("/")
+           session["user_id"] = user.id
+           return redirect("/")
     else:
         return render_template("login.html")
 
@@ -99,8 +108,11 @@ def register():
         else:
             # Insert the record into the users table in database
             try:
-                db.execute("INSERT INTO users (username, hash) VALUES(?, ?)", username, generate_password_hash(password))
-            except ValueError:
+                new_user = Users(username=username, hash=generate_password_hash(password))
+                db.session.add(new_user)
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
                 return render_template("register.html", username_error="Username already taken", password_error=None)
 
             # Redirect to login route after successful registeration
@@ -110,4 +122,6 @@ def register():
         return render_template("register.html")
 
 if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)
