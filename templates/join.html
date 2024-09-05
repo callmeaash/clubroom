@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <style>
+        form{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20%;
+        }
+
+        p{
+            color: red;
+        }
+        .green{
+            color: rgb(30, 174, 30);
+        }
+        
+        input{
+            width: 30%;
+            height: 3em;
+            text-align: center;
+        }
+        input:focus{
+            outline: none;
+            box-shadow: 2px 2px 10px 5px white;
+        }
+        button{
+            width: 15em;
+            height: 3em;
+            margin-top: 40px;
+            cursor: pointer;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+
+    <form action="/join" method="post">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+              {% for message in messages %}
+                <p class="green">{{ message }}</p>
+              {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if error %}
+            <p>{{ error }}</p>
+        {% endif %}
+        <input type="text" name="room" placeholder="Room Name" value="{{ name }}" autocomplete="off">
+        <button type="submit">Join Room</button>
+    </form>
+{% endblock %}
