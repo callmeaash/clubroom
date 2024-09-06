@@ -26,4 +26,5 @@ button{
     height: 3em;
     margin-top: 40px;
     cursor: pointer;
+    font-weight: bold;
 }

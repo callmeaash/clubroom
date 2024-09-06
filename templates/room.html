@@ -11,8 +11,75 @@
         <div class="messages" id="messages"></div>
         <div class="inputs">
             <input type="text" name="message" id = "message" placeholder="message">
-            <button type="submit" name="send" id="send-btn" onclick="sendMessage()">send</button>
+            <button type="submit" name="send" id="send-btn" onClick="sendMessage()">send</button>
         </div>
     </div>
-    
+
+    <script>
+        var socketio = io();
+
+        const messages = document.getElementById("messages");
+        
+        const createMessage = (name, msg) => {
+            const content = `
+            <div class="text"> 
+                <span style="color: yellow">
+                    ${name} ${msg}
+                </span>
+            </div>
+            `;
+            messages.innerHTML += content;
+            scrollToBottom();
+        }
+        
+        const createMessages = (name, msg) => {
+            const content = `
+            <div class="text" style="margin: 5px 0;"> 
+                <span>
+                    <span style="font-weight: bold;">${name}:</span><span style="color: rgb(230, 234, 203 );">&nbsp;${msg}</span>
+                </span>
+            </div>
+            `;
+            messages.innerHTML += content;
+            scrollToBottom();
+        }
+
+        socketio.on("message", (data) =>{
+            createMessage(data.name, data.message);
+        })
+
+        socketio.on("messages", (data) =>{
+            createMessages(data.name, data.message);
+        })
+        
+        const sendMessage = () =>{
+            const messageElement = document.getElementById("message");
+            const message = messageElement.value.trim()
+            if (message === "") return;
+            socketio.emit("message", {data: message});
+            messageElement.value = "";
+        };
+
+        document.getElementById("message").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            sendMessage();
+            }
+        });
+
+        const scrollToBottom = () => {
+        const messagesContainer = document.querySelector(".messages");
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        };
+    </script>
+
+    {% for message in messages %}
+    {% for user in users %}
+        {% if user.id == message.user_id %}
+            <script>
+                createMessages("{{ user.username }}", "{{ message.message_text }}")
+            </script>
+        {% endif %}
+    {% endfor %}
+    {% endfor %}
 {% endblock %}

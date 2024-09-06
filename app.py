@@ -5,8 +5,9 @@ from functools import wraps
 import re
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
-from flask_socketio import join_room, leave_room, send, SocketIO
+from flask_socketio import join_room, leave_room, send, SocketIO, emit
 from datetime import datetime
+
 # Configure application
 app = Flask(__name__)
 
@@ -15,22 +16,26 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
+# Configure socketio
 socketio = SocketIO(app)
+
 # Configure database connection
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///clubroom.db'
 db = SQLAlchemy(app)
 
+# Creating Users table model
 class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
     username = db.Column(db.String(80), unique=True, nullable=False)
     hash = db.Column(db.String(120), nullable=False)
-    messages = db.relationship('Messages', backref='room', lazy=True)
+    messages = db.relationship('Messages', backref='user', lazy=True)
 
+# Creating ROoms table model
 class Rooms(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
     name = db.Column(db.String(80), unique=True, nullable=False)
     members = db.Column(db.Integer, default=0)
-    messages = db.relationship('Messages', backref='user', lazy=True)
+    messages = db.relationship('Messages', backref='room', lazy=True)
 
 class Messages(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
@@ -117,13 +122,19 @@ def index():
 def join():
     if request.method == 'POST':
         room_name = request.form.get("room")
+
+        # Check if the user provides room name
         if not room_name:
             return render_template("join.html", error="Provide room name")
 
+        # Retrive the room record from the rooms table based on user given room name
         room = Rooms.query.filter_by(name=room_name).first()
 
+        # If no room in database show error
         if not room:
             return render_template("join.html", error="Room doesnot exist")
+        
+        # Else redirect to the room and store the room name in session
         else:
             session["room"] = room.name
             return redirect(url_for('room', room_id=room.id))
@@ -135,18 +146,25 @@ def join():
 @login_required
 def create():
     if request.method == 'POST':
+
         room = request.form.get("room")
+
+        # Check if user provided the room name
         if not room:
             return render_template("create.html", error="Provide room name")
         
+        # Try to insert the room record in the database
         try:
             new_room = Rooms(name=room)
             db.session.add(new_room)
             db.session.commit()
+        
+        # Provide error if room already exists in the database
         except IntegrityError:
             db.session.rollback()
             return render_template("create.html", error="Room already exists")
         
+        # Provide info that room is created and redirect to join room route
         flash("Room created successfully")
         return redirect("/join")
 
@@ -156,11 +174,16 @@ def create():
 # Route for message room
 @app.route("/room/<room_id>", methods=["GET", "POST"])
 def room(room_id):
+
+    # Block user from acccessing room without going through join page
     if not 'room' in session:
         return redirect('/join')
     else:
-        return render_template("room.html", name=session['room'])
-    
+        messages = Messages.query.filter_by(room_id=room_id).order_by(Messages.timestamp)
+        users = Users.query.all()
+        return render_template("room.html", name=session['room'], messages=messages, users=users)
+
+# Socket connection for connect
 @socketio.on("connect")
 def connect():
     name = session['username']
@@ -170,8 +193,8 @@ def connect():
         send({'name': name, 'message': 'has entered the room'}, to=room.name)
         room.members += 1
         db.session.commit()
-        print(f"{name} joined the room")
 
+#Socket connection for disconnect 
 @socketio.on("disconnect")
 def disconnect():
     name = session['username']
@@ -181,11 +204,20 @@ def disconnect():
         send({'name': name, 'message': 'has left the room'}, to=room.name)
         room.members -= 1
         db.session.commit()
-        if room.members <= 0:
-            db.session.delete(room)
-            db.session.commit()
-        print(f"{name} joined the room")
-        
+
+@socketio.on("message")
+def message(data):
+    
+    room = Rooms.query.filter_by(name=session['room']).first()
+    content = {
+        "name": session['username'],
+        "message": data["data"]
+    }
+    message = Messages(room_id=room.id, user_id=session['user_id'], message_text=data['data'])
+    db.session.add(message)
+    db.session.commit()
+    emit("messages", content, to=room.name)
+
 # Route for register
 @app.route('/register', methods=["GET", "POST"])
 def register():
@@ -228,6 +260,13 @@ def register():
         
     else:
         return render_template("register.html")
+
+    
+# Log user out
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/")
 
 if __name__ == "__main__":
     with app.app_context():
