@@ -204,6 +204,14 @@ def disconnect():
         send({'name': name, 'message': 'has left the room'}, to=room.name)
         room.members -= 1
         db.session.commit()
+        if room.members <= 0:
+            messages = Messages.query.filter_by(room_id=room.id).all()
+            for message in messages:
+                db.session.delete(message)
+                db.session.commit()
+            db.session.delete(room)
+            db.session.commit()
+        
 
 @socketio.on("message")
 def message(data):
