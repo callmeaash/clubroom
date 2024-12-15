@@ -211,11 +211,11 @@ def disconnect():
                 db.session.commit()
             db.session.delete(room)
             db.session.commit()
-        
+
 
 @socketio.on("message")
 def message(data):
-    
+
     room = Rooms.query.filter_by(name=session['room']).first()
     content = {
         "name": session['username'],
